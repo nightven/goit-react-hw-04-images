@@ -2,12 +2,7 @@ import { Field,  Formik } from 'formik';
 import { StyledForm } from './SearchBar.styled';
 
 export const Searchbar = ({ onSubmit }) => {
-  // state = {
-  //   title: '',
-  // };
-  // handleChangeInput = evt => {
-  //   this.setState({ title: evt.target.value });
-  // };
+  
   const handleSubmit = (value, actions) => {
     onSubmit(value.title);
     actions.resetForm();

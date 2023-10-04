@@ -1,37 +1,41 @@
-import { Component } from 'react';
+
 import { createPortal } from 'react-dom';
 import { Overlay } from './Modal.styled';
+import { useEffect } from 'react';
 const modalRoot = document.querySelector('#modal-root');
 
-export class Modal extends Component {
-  componentDidMount() {
-    window.addEventListener('keydown', this.handleKeyDown);
-  }
-  componentWillUnmount() {
-    window.removeEventListener('keydown', this.handleKeyDown);
-  }
-
-  handleKeyDown = e => {
+export const Modal =({children, onCloseModal })=> {
+  
+  useEffect(() => {
+    //закриття модалки при натисканні ескейр
+    const handleKeyDown = e => {
     if (e.code === 'Escape') {
-      this.props.onCloseModal();
+      onCloseModal();
     }
   };
+  //вішаємо слуач
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      // прибираємо слухач
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [onCloseModal]);
 
-  closeModal = e => {
+  
+//закриття модалки при натисканні на бекдроп
+  const closeModal = e => {
     if (e.currentTarget === e.target) {
-      this.props.onCloseModal();
+      onCloseModal();
     }
   };
-
-  render() {
-    
+//відображення модалки в порталі
     return createPortal(
-        <Overlay className="overlay" onClick={this.closeModal}>
+        <Overlay className="overlay" onClick={closeModal}>
           <div className="modal">
-            {this.props.children}
+            {children}
           </div>
         </Overlay>,
         modalRoot,
       );
-  }
+  
 }

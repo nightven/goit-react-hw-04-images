@@ -2,48 +2,72 @@ import { Button } from 'components/Button/Button';
 import { ImageGalleryItem } from 'components/ImageGalleryItem/ImageGalleryItem';
 import { Loader } from 'components/Loader/Loader';
 import { Modal } from 'components/Modal/Modal';
-import { Component } from 'react';
 import { animateScroll } from 'react-scroll';
 import { getImg } from 'services/api';
 import { GalleryList } from './ImageGallery.styled';
+import { useEffect, useState } from 'react';
 
-export class ImageGallery extends Component {
-  state = {
-    images: [],
-    modalIsOpen: false,
-    status: 'idle',
-    isLoad: false,
-    pages: 1,
-    viewImage: '',
-  };
+export const ImageGallery =({value})=> {
+  const [images, setImages] = useState([]);
+  const [status, setStatus] = useState('idle');
+  const [modalIsOpen, setModalIsOpen] = useState(false);
+  const [isLoad, setIsLoad] = useState(false);
+  const [pages, setPages] = useState(1);
+  const [viewImage, setViewImage] = useState('');
+ 
+//зкидаємо масив з фкартинками та поточну сторінку на дефолтну, рпи зміні запиту
+  useEffect(() => {
+    setImages([]);
+    setPages(1);
+  }, [value]);
 
-  componentDidUpdate(prevProps, prevState) {
-    if (prevProps.value !== this.props.value) {
-      this.setState({ images: [], status: "pending" });
-      this.fetchImages(this.props.value);
+  // робимо запит на сервер при зміні значення запиту чи поточної сторінки
+useEffect(() => {
+  if (!value) return
+  setStatus('pending');
+  
+  const fetchImages = async (value, pages) => {
+    
+    try {
+      const images = await getImg(value, pages);
+
+      if (images.status === 200) {
+        if(pages === 1) {
+          setImages(images.data.hits);
+        } else {
+        setImages(prevState=> [...prevState,...images.data.hits]);
+        }
+        setStatus('resolved');
+        setIsLoad(pages < Math.ceil(images.data.totalHits / 12));
+      } else {
+        return Promise.reject('Error');
+      }
+    } catch (error) {
+      setStatus('error');
     }
-    if (prevState.pages !== this.state.pages) {
-      this.fetchImages(this.props.value, this.state.pages);
-    }
-  }
+  };
+  fetchImages(value, pages);
+  
+}, [value, pages]);
 
-  onLoadMore = () => {
-    this.setState(prevState => ({ pages: prevState.pages + 1 }));
-    this.scrollToBottom();
+
+// зміна поточної сторінки при натисканні на кнопку лоад мор
+  const onLoadMore = () => {
+    setPages(prevState => prevState + 1);
+    scrollToBottom();
   };
 
-  onImageClick = id => {
-    this.setState({
-      viewImage: this.state.images.find(img => img.id === id),
-      modalIsOpen: true,
-    });
+  //забираємо айді картинки на яку натиснули, та відображаємо модалку
+  const onImageClick = id => {
+    setViewImage(images.find(img => img.id === id));
+    setModalIsOpen(true);
   };
-
-  onCloseModal = () => {
-    this.setState({ modalIsOpen: false });
+// закриття модалки
+  const onCloseModal = () => {
+    setModalIsOpen(false);
   };
-
-  scrollToBottom = () => {
+// смузі скрл, при заванатженні додаткових картинок
+  const scrollToBottom = () => {
     animateScroll.scrollToBottom({
       duration: 1600,
       delay: 10,
@@ -51,27 +75,7 @@ export class ImageGallery extends Component {
     });
   };
 
-  fetchImages = async (value, pages) => {
-    try {
-      const images = await getImg(value, pages);
-
-      if (images.status === 200) {
-        this.setState(prevState => ({
-          images: [...prevState.images, ...images.data.hits],
-          status: 'resolved',
-          isLoad: this.state.pages < Math.ceil(images.data.totalHits / 12),
-        }));
-      } else {
-        return Promise.reject('Error');
-      }
-    } catch (error) {
-      this.setState({ status: 'error', error: error });
-    }
-  };
-
-  render() {
-    const { images, status, modalIsOpen, isLoad } = this.state;
-    const { largeImageURL, tags } = this.state.viewImage;
+    const { largeImageURL, tags } = viewImage;
 
     if (status === 'pending') {
       return <Loader />;
@@ -85,15 +89,15 @@ export class ImageGallery extends Component {
               <ImageGalleryItem
                 data={item}
                 key={item.id}
-                onImageClick={this.onImageClick}
+                onImageClick={onImageClick}
               />
             ))}
           </GalleryList>
-          <Button onLoadMore={this.onLoadMore} isLoad={isLoad}/>
+          <Button onLoadMore={onLoadMore} isLoad={isLoad}/>
           {modalIsOpen && (
             <Modal
-              viewImage={this.state.viewImage}
-              onCloseModal={this.onCloseModal}>
+              viewImage={viewImage}
+              onCloseModal={onCloseModal}>
               <img src={largeImageURL} alt={tags} />
             </Modal>
           )}
@@ -107,6 +111,6 @@ export class ImageGallery extends Component {
         </div>
       );
     } 
-    }
+   
   }
 

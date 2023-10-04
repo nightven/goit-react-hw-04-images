@@ -1,23 +1,23 @@
-import { Component } from 'react';
-import { Searchbar } from './Searchbar/Searchbar';
 
+import { Searchbar } from './Searchbar/Searchbar';
 import { ImageGallery } from './ImageGallery/ImageGallery';
 import { Container } from './app.styled';
+import { useState } from 'react';
 
 
-export class App extends Component {
-  state = {
-    value: '',
+export const App =()=> {
+  const [value, setValue] = useState('');
+  
+  const onSubmit = (value) => {
+    setValue(value);
+    
   };
-  onSubmit = (value) => {
-    this.setState({ value: value });
-  };
-  render() {
+  
     return (
       <Container>
-        <Searchbar onSubmit={this.onSubmit} />
-        <ImageGallery value={this.state.value} />
+        <Searchbar onSubmit={onSubmit} />
+        <ImageGallery value={value} />
       </Container>
     );
-  }
+ 
 }
